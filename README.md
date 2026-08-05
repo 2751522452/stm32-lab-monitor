@@ -36,34 +36,39 @@
 
 ## 系统架构
 
-```
-MQ135 ──┐
-MQ2   ──┼── ADC DMA ──┐
-DHT20 ──┼── I2C    ───┤
-           │              ▼
-           │    ┌──────────────────┐
-           │    │   STM32F103C8T6  │
-           │    │   FreeRTOS       │
-           │    │   (6 Tasks)      │
-           │    └──────┬───────┬───┘
-           │           │       │
-      ┌────┴────┐  ┌───┴───┐  │
-      │  OLED   │  │WiFi   │  │
-      │ 本地显示 │  │ESP8266│  │
-      └─────────┘  └───┬───┘  │
-                       │      │
-                  MQTT Broker │
-                  (公网/局域网) │
-                       │      │
-                  ┌────┴────┐ │
-                  │ PC 上位机│ │
-                  │server.py│ │
-                  └─────────┘ │
-                          ┌───┴───┐
-                          │ Flash │
-                          │W25Q64 │
-                          │8MB    │
-                          └───────┘
+```mermaid
+flowchart LR
+    subgraph Sensors["传感器层"]
+        MQ135["MQ135<br/>空气质量"]
+        MQ2["MQ2<br/>可燃气体"]
+        DHT20["DHT20<br/>温湿度"]
+    end
+
+    subgraph MCU["STM32F103C8T6 · FreeRTOS"]
+        ADC["ADC DMA"]
+        Tasks["6 Tasks<br/>Sensor / Alarm / MQ<br/>WiFi / Display / Flash"]
+    end
+
+    subgraph Output["输出"]
+        OLED["OLED<br/>本地显示"]
+        ESP["ESP8266<br/>WiFi 模组"]
+        Flash["W25Q64<br/>掉电存储"]
+    end
+
+    subgraph Cloud["云端"]
+        Broker["MQTT Broker<br/>test.mosquitto.org"]
+        PC["PC 上位机<br/>server.py"]
+    end
+
+    MQ135 --> ADC
+    MQ2 --> ADC
+    DHT20 --> ADC
+    ADC --> Tasks
+    Tasks --> OLED
+    Tasks --> ESP
+    Tasks --> Flash
+    ESP --> Broker
+    Broker --> PC
 ```
 
 ---
