@@ -1,7 +1,7 @@
 /**
  * @brief  MQTT 3.1.1 最小协议实现 — 纯报文构建，无动态内存
  *
- * 支持: CONNECT / PUBLISH(QoS0) / PINGREQ
+ * 支持: CONNECT / PUBLISH(QoS0) / SUBSCRIBE / PINGREQ
  * 不依赖任何第三方库，所有输出直接可送 ESP8266 CIPSEND
  */
 #ifndef __MQTT_H__
@@ -13,6 +13,8 @@
 #define MQTT_CONNECT    0x10
 #define MQTT_CONNACK    0x20
 #define MQTT_PUBLISH    0x30
+#define MQTT_SUBSCRIBE  0x82
+#define MQTT_SUBACK     0x90
 #define MQTT_PINGREQ    0xC0
 #define MQTT_PINGRESP   0xD0
 
@@ -37,6 +39,17 @@ int mqtt_build_connect(uint8_t *buf, const char *client_id, uint16_t keepalive);
  */
 int mqtt_build_publish(uint8_t *buf, const char *topic,
                        const uint8_t *payload, uint16_t payload_len);
+
+/**
+ * @brief  构建 MQTT SUBSCRIBE 报文 (QoS 0)
+ * @param  buf        输出缓冲区
+ * @param  pkt_id     报文标识符 (用于 SUBACK 匹配)
+ * @param  topic      订阅主题
+ * @param  qos        请求的 QoS 等级 (0/1/2)
+ * @return 报文总字节数
+ */
+int mqtt_build_subscribe(uint8_t *buf, uint16_t pkt_id,
+                         const char *topic, uint8_t qos);
 
 /**
  * @brief  构建 MQTT PINGREQ 心跳报文

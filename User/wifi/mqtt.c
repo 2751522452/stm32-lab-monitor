@@ -4,6 +4,7 @@
  * 参考: MQTT v3.1.1 规范
  *   CONNECT: 固定头 + 可变头(协议名/等级/标志/保活) + 负载(ClientID)
  *   PUBLISH: 固定头 + 可变头(主题) + 负载(任意数据)
+ *   SUBSCRIBE: 固定头 + 可变头(PacketID) + 负载(主题+QoS)
  *   PINGREQ: 固定头 2 字节
  */
 
@@ -117,6 +118,44 @@ int mqtt_build_publish(uint8_t *buf, const char *topic,
         memcpy(buf + pos, payload, payload_len);
         pos += payload_len;
     }
+
+    return pos;
+}
+
+/* ===================================================================
+ *  mqtt_build_subscribe
+ *
+ *  报文结构:
+ *    [0x82] [RemLen] [PktID 2B] [TopicLen 2B] [Topic] [QoS 1B]
+ *
+ *  PktID 用于 SUBACK 匹配, 可任意取值
+ * =================================================================== */
+int mqtt_build_subscribe(uint8_t *buf, uint16_t pkt_id,
+                         const char *topic, uint8_t qos)
+{
+    int pos = 0;
+    uint16_t topic_len = (uint16_t)strlen(topic);
+
+    /* 剩余长度 = PktID(2) + TopicLen(2) + Topic + QoS(1) */
+    uint32_t rem_len = 2 + 2 + (uint32_t)topic_len + 1;
+
+    /* 固定头 */
+    buf[pos++] = MQTT_SUBSCRIBE;
+
+    pos += encode_remaining_length(buf + pos, rem_len);
+
+    /* 报文标识符 */
+    write_u16(buf + pos, pkt_id);
+    pos += 2;
+
+    /* 主题过滤器 */
+    write_u16(buf + pos, topic_len);
+    pos += 2;
+    memcpy(buf + pos, topic, topic_len);
+    pos += topic_len;
+
+    /* 请求的 QoS */
+    buf[pos++] = qos;
 
     return pos;
 }

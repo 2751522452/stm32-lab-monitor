@@ -2,7 +2,7 @@
  * @brief  MQTT 协议报文构建单元测试
  *
  * 被测源文件: ../User/wifi/mqtt.c
- * 覆盖: CONNECT / PUBLISH / PINGREQ 报文结构 | 剩余长度编码
+ * 覆盖: CONNECT / PUBLISH / SUBSCRIBE / PINGREQ 报文结构 | 剩余长度编码
  */
 
 #include "unity.h"
@@ -13,12 +13,14 @@
 extern int mqtt_build_connect(uint8_t *buf, const char *client_id, uint16_t keepalive);
 extern int mqtt_build_publish(uint8_t *buf, const char *topic,
                               const uint8_t *payload, uint16_t payload_len);
+extern int mqtt_build_subscribe(uint8_t *buf, uint16_t pkt_id,
+                                const char *topic, uint8_t qos);
 extern int mqtt_build_pingreq(uint8_t *buf);
 
 /* ---- 报文类型 ---- */
-#define MQTT_CONNECT  0x10
-#define MQTT_PUBLISH  0x30
-#define MQTT_PINGREQ  0xC0
+#define MQTT_CONNECT    0x10
+#define MQTT_PUBLISH    0x30
+#define MQTT_SUBSCRIBE  0x82
 
 /* ================================================================ */
 void setUp(void) {}
@@ -159,6 +161,58 @@ void test_publish_empty_payload(void)
 }
 
 /* ================================================================
+ *  SUBSCRIBE 测试
+ * ================================================================ */
+
+void test_subscribe_fixed_header(void)
+{
+    uint8_t buf[128];
+    int len = mqtt_build_subscribe(buf, 1, "test", 0);
+    TEST_ASSERT(len > 5);
+    TEST_ASSERT_EQUAL_HEX(MQTT_SUBSCRIBE, buf[0]);
+}
+
+void test_subscribe_pkt_id(void)
+{
+    uint8_t buf[128];
+    mqtt_build_subscribe(buf, 0x1234, "x", 0);
+    /* 跳过固定头 → PktID */
+    int pos = 1;
+    while (buf[pos] & 0x80) pos++;
+    pos++;
+    uint16_t pid = ((uint16_t)buf[pos] << 8) | buf[pos + 1];
+    TEST_ASSERT_EQUAL_UINT16(0x1234, pid);
+}
+
+void test_subscribe_topic_qos0(void)
+{
+    uint8_t buf[128];
+    mqtt_build_subscribe(buf, 1, "etms/cmd", 0);
+    /* 跳过固定头 + PktID(2) → topic */
+    int pos = 1;
+    while (buf[pos] & 0x80) pos++;
+    pos++;
+    pos += 2;  /* PktID */
+    uint16_t tlen = ((uint16_t)buf[pos] << 8) | buf[pos + 1];
+    TEST_ASSERT_EQUAL_UINT16(8, tlen);
+    TEST_ASSERT_EQUAL_MEMORY("etms/cmd", &buf[pos + 2], 8);
+    /* QoS */
+    TEST_ASSERT_EQUAL_HEX(0x00, buf[pos + 2 + 8]);
+}
+
+void test_subscribe_topic_qos1(void)
+{
+    uint8_t buf[128];
+    mqtt_build_subscribe(buf, 42, "s", 1);
+    int pos = 1;
+    while (buf[pos] & 0x80) pos++;
+    pos++;
+    pos += 2;  /* PktID */
+    pos += 2 + 1;  /* topic */
+    TEST_ASSERT_EQUAL_HEX(0x01, buf[pos]);
+}
+
+/* ================================================================
  *  Test Runner
  * ================================================================ */
 int main(void)
@@ -173,5 +227,9 @@ int main(void)
     RUN_TEST(test_publish_topic);
     RUN_TEST(test_publish_payload);
     RUN_TEST(test_publish_empty_payload);
+    RUN_TEST(test_subscribe_fixed_header);
+    RUN_TEST(test_subscribe_pkt_id);
+    RUN_TEST(test_subscribe_topic_qos0);
+    RUN_TEST(test_subscribe_topic_qos1);
     return UNITY_END();
 }
