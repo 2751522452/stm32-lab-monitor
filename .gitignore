@@ -1,0 +1,37 @@
+# IDE
+*.uvguix.*
+*.uvoptx
+*.scvd
+RTE/
+
+# Build output
+Build/
+Output/
+Project/Objects/
+*.o
+*.d
+*.crf
+*.dmp
+*.lnp
+*.axf
+*.hex
+*.bin
+*.elf
+*.list
+*.map
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
