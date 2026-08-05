@@ -19,6 +19,8 @@
 #include "storage/adc_storage.h"
 #include "wifi/esp8266.h"
 #include "wifi/mqtt.h"
+#include "cli/cli.h"
+#include "perf/perf.h"
 #include "wifi_config.h"
 #include <stdio.h>
 #include <string.h>
@@ -259,7 +261,10 @@ int main(void)
 	Sensor_Start();
 	Alarm_Init();
 
-	/* 创建互斥锁 + 队列 + 五个任务 */
+	/* USART1 RX 中断已使能 — CLI 可用 */
+	CLI_Init();
+
+	/* 创建互斥锁 + 队列 + 六个任务 */
 	g_sensorMutex = xSemaphoreCreateMutex();
 	g_wifiQueue = xQueueCreate(1, sizeof(SensorData));
 	xTaskCreate(SensorTask,  "Sensor",  200, NULL, 3, &hSensor);
@@ -332,6 +337,12 @@ void Error_Handler(void)
 	while (1)
 	{
 	}
+}
+
+void vApplicationIdleHook(void)
+{
+	Perf_IdleTick();
+	CLI_Process();
 }
 
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)

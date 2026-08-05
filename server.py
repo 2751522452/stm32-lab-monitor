@@ -13,8 +13,8 @@ PORT = 1883
 TOPIC = "etms/sensor"
 
 
-def on_connect(client, userdata, flags, rc):
-    if rc == 0:
+def on_connect(client, userdata, flags, reason_code, properties):
+    if reason_code == 0:
         print(f"[OK] Connected to {BROKER}")
         client.subscribe(TOPIC)
         print(f"[OK] Subscribed to '{TOPIC}'")
@@ -22,7 +22,7 @@ def on_connect(client, userdata, flags, rc):
         print(f"{'Time':<12} {'PS(V)':<8} {'MQ135(V)':<10} {'MQ2(V)':<8} {'Temp(C)':<9} {'Hum(%)':<8}")
         print("-" * 60)
     else:
-        print(f"[ERR] Connection failed, rc={rc}")
+        print(f"[ERR] Connection failed, rc={reason_code}")
 
 
 def on_message(client, userdata, msg):

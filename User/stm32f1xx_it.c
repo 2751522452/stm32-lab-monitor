@@ -9,9 +9,12 @@ extern void vPortSVCHandler(void);
 extern void xPortPendSVHandler(void);
 extern void xPortSysTickHandler(void);
 
+#include "cli/cli.h"
+
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc1;
 extern TIM_HandleTypeDef htim2;
+extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
 
 /**
@@ -135,6 +138,14 @@ void TIM2_IRQHandler(void)
 /**
   * @brief This function handles USART3 global interrupt.
   */
+void USART1_IRQHandler(void)
+{
+  if (USART1->SR & USART_SR_RXNE) {
+    uint8_t ch = (uint8_t)(USART1->DR & 0xFF);
+    CLI_RX_IRQ(ch);
+  }
+}
+
 void USART3_IRQHandler(void)
 {
   HAL_UART_IRQHandler(&huart3);
