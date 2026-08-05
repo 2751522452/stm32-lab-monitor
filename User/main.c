@@ -19,6 +19,7 @@
 #include "storage/adc_storage.h"
 #include "wifi/esp8266.h"
 #include "wifi/mqtt.h"
+#include "wifi_config.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -137,8 +138,8 @@ static void WiFiTask(void *pvParameters)
 	static uint32_t conn_tick   = 0;
 
 	ESP8266_Init(&g_esp,
-		"YOUR_WIFI_SSID", "YOUR_WIFI_PASSWORD",
-		"test.mosquitto.org", 1883);
+		WIFI_SSID, WIFI_PASSWORD,
+		MQTT_BROKER, MQTT_PORT);
 
 	for (;;) {
 		ESP8266_Process(&g_esp);

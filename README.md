@@ -87,8 +87,9 @@ flowchart LR
 ### 编译烧录
 
 ```bash
-# 1. 修改 WiFi 配置
-#    打开 User/main.c，找到 WiFiTask 函数，替换 SSID 和密码
+# 1. 配置 WiFi
+cp User/wifi_config.example.h User/wifi_config.h
+# 编辑 wifi_config.h 填入实际 SSID 和密码
 
 # 2. Keil MDK 打开工程
 Project/ETMS.uvprojx → F7 编译 → F8 烧录

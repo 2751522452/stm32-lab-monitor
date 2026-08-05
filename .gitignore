@@ -32,6 +32,14 @@ venv/
 __pycache__/
 *.pyc
 
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# WiFi credentials (keep real config local)
+User/wifi_config.h
+
 # OS
 .DS_Store
 Thumbs.db

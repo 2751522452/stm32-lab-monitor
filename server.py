@@ -36,7 +36,7 @@ def on_message(client, userdata, msg):
 
 
 def main():
-    client = mqtt.Client(client_id="etms-monitor-pc")
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="etms-monitor-pc")
     client.on_connect = on_connect
     client.on_message = on_message
 
