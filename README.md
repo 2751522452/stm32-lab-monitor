@@ -46,7 +46,7 @@ flowchart LR
 
     subgraph MCU["STM32F103C8T6 · FreeRTOS"]
         ADC["ADC DMA"]
-        Tasks["6 Tasks<br/>Sensor / Alarm / MQ<br/>WiFi / Display / Flash"]
+        Tasks["5 Tasks<br/>Sensor / Alarm / WiFi<br/>Display / Flash"]
     end
 
     subgraph Output["输出"]
@@ -127,9 +127,8 @@ make          # 运行全部 58 条单元测试
 ```
 ETMS/
 ├── User/               # 应用层
-│   ├── sensor/         #   传感器数据采集
+│   ├── sensor/         #   传感器采集 + 气体传感器预热状态机
 │   ├── alarm/          #   告警逻辑 + 外设驱动
-│   ├── mq/             #   MQ 传感器预热状态机
 │   ├── wifi/           #   ESP8266 AT 驱动 + MQTT 协议 + 环形缓冲
 │   ├── storage/        #   Flash 双扇区掉电安全存储
 │   ├── cli/            #   UART 调试终端

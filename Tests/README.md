@@ -228,7 +228,7 @@ make test_mqtt
 | 模块 | 测试数 | 覆盖内容 |
 |------|--------|---------|
 | Alarm | 22 | CalcLevel 5级阈值 + SetLevel 配置 + Process 闪烁/常亮 |
-| MQ | 11 | PREHEAT→STABLE→FAULT 全状态迁移 + 超时/恢复 |
+| Sensor Warmup | 11 | PREHEAT→STABLE→FAULT 全状态迁移 + 超时/恢复 |
 | CRC8 | 8 | 已知向量 + record CRC 防篡改 |
 | MQTT | 9 | CONNECT/PUBLISH/PINGREQ 报文结构 |
 | Storage | 8 | 首次上电 + 扇区轮换 + 掉电恢复 + 格式化 |

@@ -15,7 +15,6 @@
 #include "spi/spi.h"
 #include "spi_w25q64/spi_w25q64.h"
 #include "sensor/sensor.h"
-#include "mq/mq.h"
 #include "alarm/alarm.h"
 #include "storage/adc_storage.h"
 #include "wifi/esp8266.h"
@@ -24,22 +23,19 @@
 #include <string.h>
 
 /* Private variables ---------------------------------------------------------*/
-MQ_Sensor mq135;
-MQ_Sensor mq2;
-uint32_t  flash_id;
+uint32_t flash_id;
 
 /* FreeRTOS 任务间共享数据 --------------------------------------------------*/
 static SensorData         g_sensorData;
 static SemaphoreHandle_t  g_sensorMutex;
 static QueueHandle_t      g_wifiQueue;
-static TaskHandle_t       hSensor, hAlarm, hMQ, hDisplay, hFlash, hWiFi;
+static TaskHandle_t       hSensor, hAlarm, hDisplay, hFlash, hWiFi;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void SensorTask(void *pvParameters);
 static void AlarmTask(void *pvParameters);
 static void DisplayTask(void *pvParameters);
-static void MQTask(void *pvParameters);
 static void FlashTask(void *pvParameters);
 static void WiFiTask(void *pvParameters);
 
@@ -54,7 +50,6 @@ static void SensorTask(void *pvParameters)
 			xSemaphoreTake(g_sensorMutex, portMAX_DELAY);
 			g_sensorData = *sd;
 			xSemaphoreGive(g_sensorMutex);
-			/* 异步推送到 WiFi 队列 (覆盖旧数据) */
 			xQueueOverwrite(g_wifiQueue, sd);
 		}
 		vTaskDelay(pdMS_TO_TICKS(20));
@@ -108,24 +103,6 @@ static void DisplayTask(void *pvParameters)
 		OLED_ShowString(0, 4, cnt_buf);
 
 		vTaskDelay(pdMS_TO_TICKS(200));
-	}
-}
-
-/* ---- MQTask (Prio 2, 1s) ---- */
-static void MQTask(void *pvParameters)
-{
-	(void)pvParameters;
-	for (;;) {
-		SensorData sd;
-		xSemaphoreTake(g_sensorMutex, portMAX_DELAY);
-		sd = g_sensorData;
-		xSemaphoreGive(g_sensorMutex);
-
-		if (sd.adc_fresh) {
-			MQ_Update(&mq135, sd.mq135_raw);
-			MQ_Update(&mq2,   sd.mq2_raw);
-		}
-		vTaskDelay(pdMS_TO_TICKS(1000));
 	}
 }
 
@@ -189,10 +166,9 @@ static void WiFiTask(void *pvParameters)
 						mqtt_state  = 2;
 						last_ping   = HAL_GetTick();
 						printf("[MQTT] connected\n");
-						printf("[STACK] S=%u A=%u M=%u D=%u F=%u W=%u\n",
+						printf("[STACK] S=%u A=%u D=%u F=%u W=%u\n",
 							(unsigned)uxTaskGetStackHighWaterMark(hSensor),
 							(unsigned)uxTaskGetStackHighWaterMark(hAlarm),
-							(unsigned)uxTaskGetStackHighWaterMark(hMQ),
 							(unsigned)uxTaskGetStackHighWaterMark(hDisplay),
 							(unsigned)uxTaskGetStackHighWaterMark(hFlash),
 							(unsigned)uxTaskGetStackHighWaterMark(hWiFi));
@@ -277,19 +253,16 @@ int main(void)
 	I2C_Scan();
 	OLED_Clear();
 
-	/* 四模块初始化 */
+	/* 传感器初始化 (含 MQ135 180s / MQ2 120s 预热状态机) */
 	Sensor_Init();
 	Sensor_Start();
 	Alarm_Init();
-	MQ_Init(&mq135, 180000);   /* MQ135 预热 180 秒 */
-	MQ_Init(&mq2,   120000);   /* MQ2  预热 120 秒 */
 
-	/* 创建互斥锁 + 队列 + 六个任务 */
+	/* 创建互斥锁 + 队列 + 五个任务 */
 	g_sensorMutex = xSemaphoreCreateMutex();
 	g_wifiQueue = xQueueCreate(1, sizeof(SensorData));
 	xTaskCreate(SensorTask,  "Sensor",  200, NULL, 3, &hSensor);
 	xTaskCreate(AlarmTask,   "Alarm",   256, NULL, 2, &hAlarm);
-	xTaskCreate(MQTask,      "MQ",      256, NULL, 2, &hMQ);
 	xTaskCreate(DisplayTask, "Display", 512, NULL, 1, &hDisplay);
 	xTaskCreate(FlashTask,   "Flash",   256, NULL, 1, &hFlash);
 	xTaskCreate(WiFiTask,    "WiFi",    512, NULL, 2, &hWiFi);

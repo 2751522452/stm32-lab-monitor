@@ -19,14 +19,13 @@ INCS    = -I. \
           -Istubs \
           -I../User \
           -I../User/alarm \
-          -I../User/mq \
           -I../User/sensor \
           -I../User/storage \
           -I../User/wifi
 
 # ---- 被测源文件 ----
 SRC_ALARM   = ../User/alarm/alarm.c
-SRC_MQ      = ../User/mq/mq.c
+SRC_SENSOR  = ../User/sensor/sensor.c
 SRC_STORAGE = ../User/storage/adc_storage.c
 SRC_MQTT    = ../User/wifi/mqtt.c
 
@@ -39,9 +38,9 @@ UNITY_OBJS  = build/unity.o
 # ---- 构建目录 ----
 BUILD_DIR   = build
 
-.PHONY: all build clean test_alarm test_mq test_crc8 test_storage test_mqtt
+.PHONY: all build clean test_alarm test_sensor_warmup test_crc8 test_storage test_mqtt
 
-all: build test_alarm test_mq test_crc8 test_storage test_mqtt
+all: build test_alarm test_sensor_warmup test_crc8 test_storage test_mqtt
 	@echo ""
 	@echo "=== All test suites completed ==="
 
@@ -73,16 +72,16 @@ test_alarm: build build/test_alarm.o build/alarm_ut.o $(MOCK_OBJS) $(UNITY_OBJS)
 	@echo "--- test_alarm ---"
 	./build/$@
 
-# ---- MQ 状态机测试 ----
-build/test_mq.o: test_mq.c
+# ---- 传感器预热状态机测试 ----
+build/test_sensor_warmup.o: test_sensor_warmup.c
 	$(CC) $(CFLAGS) $(INCS) -c $< -o $@
 
-build/mq_ut.o: $(SRC_MQ)
+build/sensor_ut.o: $(SRC_SENSOR)
 	$(CC) $(CFLAGS) $(INCS) -c $< -o $@
 
-test_mq: build build/test_mq.o build/mq_ut.o $(MOCK_OBJS) $(UNITY_OBJS)
-	$(CC) $(CFLAGS) build/test_mq.o build/mq_ut.o $(MOCK_OBJS) $(UNITY_OBJS) -o build/$@
-	@echo "--- test_mq ---"
+test_sensor_warmup: build build/test_sensor_warmup.o build/sensor_ut.o $(MOCK_OBJS) $(UNITY_OBJS)
+	$(CC) $(CFLAGS) build/test_sensor_warmup.o build/sensor_ut.o $(MOCK_OBJS) $(UNITY_OBJS) -o build/$@
+	@echo "--- test_sensor_warmup ---"
 	./build/$@
 
 # ---- CRC8 + MQTT 协议测试 ----

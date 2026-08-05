@@ -559,11 +559,6 @@
               <FilePath>..\User\sensor\sensor.c</FilePath>
             </File>
             <File>
-              <FileName>mq.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\User\mq\mq.c</FilePath>
-            </File>
-            <File>
               <FileName>alarm.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\alarm\alarm.c</FilePath>
